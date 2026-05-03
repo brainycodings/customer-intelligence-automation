@@ -51,7 +51,7 @@ Aggregates all metrics → appends row to Google Sheets dashboard → sends emai
 
 ---
 
-## 📊 Scoring Logic (Workflow 2)
+## Scoring Logic (Workflow 2)
 
 Each contact receives an engagement score between 0 and 100 based on behavioral signals:
 
@@ -79,10 +79,14 @@ Each contact receives an engagement score between 0 and 100 based on behavioral 
 - Transforms column names and data types via JavaScript
 - Upserts each contact into HubSpot with custom properties: `plan`, `mrr`, `days_inactive`, `actions_7d`
 
+![Workflow 1 overview](screenshots/workflow1_CI.png)
+
 ### Workflow 2 — Scoring (runs at 01:00am)
 - Fetches all HubSpot contacts with custom properties
 - Calculates engagement score using behavioral rules
 - Updates `engagement_score` and `churn_segment` in HubSpot for each contact
+
+  ![Workflow 2 overview](screenshots/workflow2_CI.png)
 
 ### Workflow 3 — Lifecycle Actions (runs at 02:00am)
 - Filters contacts where `churn_segment = churn_risk`
@@ -91,27 +95,25 @@ Each contact receives an engagement score between 0 and 100 based on behavioral 
 - Posts an alert to Slack `#churn-alerts` channel
 - Creates a support ticket in HubSpot CRM
 
+  ![Workflow 3 overview](screenshots/workflow3_CI.png)
+
+
 ### Workflow 4 — Weekly Reporting (runs every Monday at 08:00am)
 - Aggregates metrics across all contacts
 - Appends a new row to the Google Sheets dashboard with: total contacts, segment breakdown, average score, total MRR, MRR at risk
 - Sends a formatted weekly summary via Gmail
 
+  ![Workflow 4 overview](screenshots/workflow4_CI.png)
+
+
+  ![Workflow 4 overview](screenshots/worflow4_dashboard.png)
+
+
 ---
 
 ## Sample Weekly Report Output
 
-```
-📊 Weekly Report — 2026-05-05
-
-👥 Total contacts : 200
-🔴 Churn risk     : 47
-🟡 At risk        : 68
-🟢 Healthy        : 85
-
-📈 Average score  : 54/100
-💰 Total MRR      : 18 650€
-⚠️  MRR at risk   : 4 200€
-```
+![Workflow 4 overview](screenshots/workflow4_slack.png)
 
 ---
 
