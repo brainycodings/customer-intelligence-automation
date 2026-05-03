@@ -1,0 +1,313 @@
+{
+  "name": "4 - Reporting automatisé",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "11d627bb-31f2-4066-91a7-bec103090245",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "returnAll": true,
+        "additionalFields": {
+          "propertiesCollection": {
+            "propertiesValues": {
+              "properties": [
+                "churn_segment",
+                "engagement_score",
+                "plan",
+                "mrr"
+              ]
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "9652a46d-7f89-46ec-b03c-46a350699358",
+      "name": "Get many contacts",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const get = (item, key) =>\n  item.json.properties?.[key]?.value ?? '';\n\nlet churn = 0, atRisk = 0, healthy = 0;\nlet totalScore = 0, mrrTotal = 0, mrrAtRisk = 0;\n\nfor (const item of items) {\n  const segment = get(item, 'churn_segment');\n  const score   = parseInt(get(item, 'engagement_score')) || 0;\n  const mrr     = parseInt(get(item, 'mrr')) || 0;\n\n  if (segment === 'churn_risk') { churn++; mrrAtRisk += mrr; }\n  else if (segment === 'at_risk') atRisk++;\n  else healthy++;\n\n  totalScore += score;\n  mrrTotal   += mrr;\n}\n\nconst total = items.length;\nconst scoreMoyen = total > 0\n  ? Math.round(totalScore / total)\n  : 0;\n\nconst today = new Date().toISOString().split('T')[0];\n\nreturn [{ json: {\n  date_rapport:    today,\n  total_contacts:  total,\n  churn_risk:      churn,\n  at_risk:         atRisk,\n  healthy:         healthy,\n  score_moyen:     scoreMoyen,\n  mrr_total:       mrrTotal,\n  mrr_at_risk:     mrrAtRisk\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6aa41dd5-db96-43f8-a193-867650d675b2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z-Lv3UoTyI3vUKC_s2w_p_sbsKdLcnQx5IuvBEoyV9U",
+          "mode": "list",
+          "cachedResultName": "saas_customers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z-Lv3UoTyI3vUKC_s2w_p_sbsKdLcnQx5IuvBEoyV9U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 570078707,
+          "mode": "list",
+          "cachedResultName": "dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z-Lv3UoTyI3vUKC_s2w_p_sbsKdLcnQx5IuvBEoyV9U/edit#gid=570078707"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date_rapport",
+              "displayName": "date_rapport",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total_contacts",
+              "displayName": "total_contacts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score_moyen",
+              "displayName": "score_moyen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mrr_total",
+              "displayName": "mrr_total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mrr_at_risk",
+              "displayName": "mrr_at_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "churn_risk",
+              "displayName": "churn_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "at_risk",
+              "displayName": "at_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "healthy",
+              "displayName": "healthy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        0
+      ],
+      "id": "5d8971fb-02de-47d4-8e29-7298130d34ef",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wkNmCahlzMgzDFGR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "=Rapport hebdomadaire du {{ $json.date_rapport }}",
+        "message": "=+ 📊 Rapport hebdomadaire du {{ $json.date_rapport }}\n+ 👥 Total contacts :  {{ $json.total_contacts }}\n+ 🔴 Churn risk : {{ $json.churn_risk }}\n+ 🟡 At risk : {{ $json.at_risk }}\n+ 🟢 Healthy : {{ $json.healthy }}\n+ 📈 Score moyen : {{ $json.score_moyen }}\n+ 💰 MRR total : {{ $json.mrr_total }}\n+ ⚠️ MRR at risk : {{ $json.mrr_at_risk }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        208
+      ],
+      "id": "faf7eaf8-1261-469d-b6c7-903c1abe813d",
+      "name": "Send a message",
+      "webhookId": "eb0c9244-f117-419c-8469-fafe3d664569",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9eYYDwaYmNr1L71Y",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B19U2PQCR",
+          "mode": "list",
+          "cachedResultName": "tous-technical-stuff"
+        },
+        "text": "=📊 Rapport hebdomadaire du {{ $json.date_rapport }} \n+ 👥 Total contacts :  {{ $json.total_contacts }} \n+ 🔴 Churn risk : {{ $json.churn_risk }} \n+ 🟡 At risk : {{ $json.at_risk }} \n+ 🟢 Healthy : {{ $json.healthy }} \n+ 📈 Score moyen : {{ $json.score_moyen }} \n+ 💰 MRR total : {{ $json.mrr_total }} \n+ ⚠️ MRR at risk : {{ $json.mrr_at_risk }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "e6c7ef0a-e46a-495b-8b96-292c45d97003",
+      "name": "Send a message1",
+      "webhookId": "05a9b6d7-945d-4a49-ba63-f62f68387b7e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "fmrKPGN92FfNthA3",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many contacts": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5baa66f9-15c6-4af9-98e0-c0b224c85e34",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b331327c218194f5904ebd0ba553f68b4c713af4f2b579b2eedb2ad6379ee765"
+  },
+  "id": "EzxT5v4sYTxrRtFp",
+  "tags": []
+}

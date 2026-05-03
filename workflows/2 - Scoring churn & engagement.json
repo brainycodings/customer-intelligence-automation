@@ -1,0 +1,154 @@
+{
+  "name": "2 - Scoring churn & engagement",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "76b96427-6834-4e3c-9753-b80e79d6d1ef",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const p = item.json.properties || {};\n\n  // Récupère la valeur d'une propriété HubSpot\n  const get = (key) => p[key]?.value ?? null;\n\n  // Récupère l'email depuis identity-profiles\n  const identities = item.json['identity-profiles']?.[0]?.identities || [];\n  const emailObj = identities.find(i => i.type === 'EMAIL');\n  const email = emailObj?.value || '';\n\n  const inactive = parseInt(get('days_inactive')) || 0;\n  const actions  = parseInt(get('actions_7d'))    || 0;\n  const plan     = get('plan') || 'free';\n  const tickets  = parseInt(get('support_tickets_30d')) || 0;\n\n  let score = 50;\n\n  if (inactive > 20) score -= 40;\n  else if (inactive > 7) score -= 20;\n  else score += 30;\n\n  if (actions === 0) score -= 20;\n  else if (actions >= 10) score += 20;\n  else score += 5;\n\n  if (plan === 'pro' || plan === 'enterprise') score += 15;\n  if (tickets >= 3) score -= 15;\n\n  score = Math.max(0, Math.min(100, score));\n\n  let segment = 'healthy';\n  if (score < 40) segment = 'churn_risk';\n  else if (score <= 70) segment = 'at_risk';\n\n  return { json: {\n    hs_object_id: item.json['canonical-vid'],\n    email: email,\n    engagement_score: score,\n    churn_segment: segment\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a534dc86-2ff5-441d-aee9-696f9c554e6a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "engagement_score",
+                "value": "={{ $json.engagement_score }}"
+              },
+              {
+                "property": "churn_segment",
+                "value": "={{ $json.churn_segment }}"
+              }
+            ]
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d0e01005-78c3-4eb5-8dc6-fb082e24a92a",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getRecentlyCreatedUpdated",
+        "limit": 200,
+        "additionalFields": {
+          "propertiesCollection": {
+            "propertiesValues": {
+              "properties": [
+                "plan",
+                "mrr",
+                "tickets_30d",
+                "days_inactive",
+                "actions_7d"
+              ]
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "88514259-e6da-485e-9595-cad7ed51210e",
+      "name": "Get recently created/updated contacts",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get recently created/updated contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get recently created/updated contacts": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "322eba5e-a2da-4816-9860-0354b539ec6f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b331327c218194f5904ebd0ba553f68b4c713af4f2b579b2eedb2ad6379ee765"
+  },
+  "id": "iETSUqeJ1RJSY4PE",
+  "tags": []
+}

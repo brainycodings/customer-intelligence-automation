@@ -1,0 +1,165 @@
+{
+  "name": "1 - data ingestion & enrichment",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d39eec85-4d4d-4dcc-8398-66443e03e834",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Ra-CHh7lwM6chZWliExWLX9IPs1LD73PUZhwMaF1hvQ",
+          "mode": "list",
+          "cachedResultName": "Mixpanel users",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ra-CHh7lwM6chZWliExWLX9IPs1LD73PUZhwMaF1hvQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 553861653,
+          "mode": "list",
+          "cachedResultName": "mixpanel_users_for_hubspot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ra-CHh7lwM6chZWliExWLX9IPs1LD73PUZhwMaF1hvQ/edit#gid=553861653"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0631ab84-bafb-4b63-9edc-7db234e11ae5",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wkNmCahlzMgzDFGR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  return { json: {\n    email: d.email,\n    firstname: d.first_name,\n    lastname: d.last_name,\n    plan: d.plan,\n    mrr: d.mrr_eur,\n    last_login: d.last_login_date,\n    days_inactive: d.days_since_last_login,\n    actions_7d: d.actions_last_7d,\n    tickets_30d: d.support_tickets_30d,\n    customer_id: d.customer_id\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fb22c2f7-4331-467b-9bea-ad94b03ff103",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "plan",
+                "value": "={{ $json.plan }}"
+              },
+              {
+                "property": "mrr",
+                "value": "={{ $json.mrr }}"
+              },
+              {
+                "property": "days_inactive",
+                "value": "={{ $json.days_inactive }}"
+              },
+              {
+                "property": "actions_7d",
+                "value": "={{ $json.actions_7d }}"
+              },
+              {
+                "property": "tickets_30d",
+                "value": "={{ $json.tickets_30d }}"
+              }
+            ]
+          },
+          "firstName": "={{ $json.firstname }}",
+          "lastName": "={{ $json.lastname }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "43a3c87d-5f22-40c9-b2ea-7bfc59606aad",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9c32c320-e77a-430f-bb17-d1f25c513c56",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b331327c218194f5904ebd0ba553f68b4c713af4f2b579b2eedb2ad6379ee765"
+  },
+  "id": "jE7wkBVunTGVnGhf",
+  "tags": []
+}
