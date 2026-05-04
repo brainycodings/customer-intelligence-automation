@@ -162,6 +162,8 @@ The dataset simulates 200 B2B SaaS customers with the following fields:
     ├── workflow1_CI.png
     ├── workflow2_CI.png
     ├── workflow3_CI.png
+    ├── workflow3_email1.png
+    └── workflow3_email2.png
     └── workflow4_CI.png
     └── workflow4_dashboard.png
     └── workflow4_slack.png
