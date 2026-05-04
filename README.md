@@ -95,7 +95,11 @@ Each contact receives an engagement score between 0 and 100 based on behavioral 
 - Posts an alert to Slack `#churn-alerts` channel
 - Creates a support ticket in HubSpot CRM
 
-  ![Workflow 3 overview](screenshots/workflow3_CI.png)
+  ![Workflow 3 overview](screenshots/workflow3.png)
+  
+  ![Workflow 3 message](screenshots/workflow3_email1.png)
+  ![Workflow 3 message](screenshots/workflow3_email2.png)
+
 
 
 ### Workflow 4 — Weekly Reporting (runs every Monday at 08:00am)
