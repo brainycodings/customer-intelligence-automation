@@ -1,0 +1,364 @@
+{
+  "name": "3 - Lifecycle automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6ff8e231-14b7-42c8-ac80-329a15066881",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "returnAll": true,
+        "additionalFields": {
+          "propertiesCollection": {
+            "propertiesValues": {
+              "properties": [
+                "churn_segment",
+                "engagement_score",
+                "actions_7d",
+                "days_inactive",
+                "mrr",
+                "plan",
+                "tickets_30d",
+                "firstname"
+              ]
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "83b8434f-ad55-4ee4-aa95-9363e3d39715",
+      "name": "Get many contacts",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "195e683b-ef78-4134-9bfc-5b05c313eeba",
+              "leftValue": "={{ $json.properties.churn_segment.value }}",
+              "rightValue": "churn_risk",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "00ed8e77-5939-479e-bb3b-84a1ceba49f5",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const p = item.json.properties || {};\n  const get = (key) => p[key]?.value ?? '';\n\n  const identities = item.json['identity-profiles']?.[0]?.identities || [];\n  const emailObj = identities.find(i => i.type === 'EMAIL');\n\n  return { json: {\n    email: emailObj?.value || '',\n    firstname: get('firstname') || 'there',\n    plan: get('plan') || 'free',\n    days_inactive: parseInt(get('days_inactive')) || 0,\n    engagement_score: parseInt(get('engagement_score')) || 0\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "df0dba25-d7af-4e94-8d53-839ace30a505",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "bernadette.growth@gmail.com",
+        "subject": "=On pense à vous, {{ $('Code in JavaScript').item.json.firstname }}",
+        "message": "={{ $json.choices[0].message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        48
+      ],
+      "id": "f387718f-73bb-4049-a9a3-5c52e02e1c97",
+      "name": "Send a message",
+      "webhookId": "e81bfc7e-ab0c-444f-8963-8001be4a905a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9eYYDwaYmNr1L71Y",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B10KZ9084",
+          "mode": "list",
+          "cachedResultName": "churn-risk"
+        },
+        "text": "=🚨 *Churn Risk détecté* Nom : {{$('Code in JavaScript').item.json.firstname  }} Plan : {{ $('Code in JavaScript').item.json.plan}} Inactif depuis : {{ $('Code in JavaScript').item.json.days_inactive}} jours\\nScore : {{ $('Code in JavaScript').item.json.engagement_score }}/100\\nEmail envoyé ✅",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1648,
+        256
+      ],
+      "id": "6b91f2ab-e578-4b0c-a2a6-a51adc06cbe0",
+      "name": "Send a message1",
+      "webhookId": "0356b79d-63d7-4bb6-a5e6-2c47c0d98ee5",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "fmrKPGN92FfNthA3",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "ticket",
+        "pipelineId": "0",
+        "stageId": "1",
+        "ticketName": "=Churn risk -  {{ $('Code in JavaScript').item.json.firstname }} {{ $('Code in JavaScript').item.json.plan }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        -144
+      ],
+      "id": "56642957-bb6d-40dd-adee-5f10347a0dd8",
+      "name": "Create a ticket",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "OqeqPHLvO7DaYjxD",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"max_tokens\": 200,\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"={{ $json.prompt }}\"\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "e3c7bef3-f71e-45a2-acc0-5e207ad93f99",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b28a7cd-08ba-4fa7-9ab9-16c0e6680e49",
+              "name": "prompt",
+              "value": "=Tu es un Customer Success Manager. Écris un email de re-engagement court et chaleureux (3 phrases max) pour {{ $json.firstname }},client sur le plan {{$json.plan}}, inactif depuis {{$json.days_inactive}} jours. Structure l'email en 3 paragraphes séparés par des sauts de ligne. Réponds uniquement avec le corps de l'email, sans objet ni signature.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        0
+      ],
+      "id": "7b7a87b7-1c91-4164-8442-6a98cb005604",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        928
+      ],
+      "id": "6665c9cc-1fae-47e1-9b62-c0be7f0077ca",
+      "name": "Wait",
+      "webhookId": "442f3135-882d-44d1-a873-021dbdf9fa9d"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        400,
+        928
+      ],
+      "id": "db859de9-4e31-455f-90f1-fffb325b6aa3",
+      "name": "Limit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many contacts": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a ticket": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Create a ticket",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        []
+      ]
+    },
+    "Limit": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "556ed8b8-c196-4093-871d-3d9564cd0ce3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b331327c218194f5904ebd0ba553f68b4c713af4f2b579b2eedb2ad6379ee765"
+  },
+  "id": "xNfzM012w1NP7jDx",
+  "tags": []
+}
