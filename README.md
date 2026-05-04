@@ -159,10 +159,12 @@ The dataset simulates 200 B2B SaaS customers with the following fields:
 │   ├── workflow_3_lifecycle.json
 │   └── workflow_4_reporting.json
 └── screenshots/
-    ├── workflow_1_overview.png
-    ├── workflow_2_scoring_output.png
-    ├── workflow_3_slack_alert.png
-    └── workflow_4_dashboard.png
+    ├── workflow1_CI.png
+    ├── workflow2_CI.png
+    ├── workflow3_CI.png
+    └── workflow4_CI.png
+    └── workflow4_dashboard.png
+    └── workflow4_slack.png
 ```
 
 ---
